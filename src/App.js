@@ -1,25 +1,62 @@
-import logo from './logo.svg';
-import './App.css';
+import { useEffect } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
+import s from './styles/App.module.css';
+import PropTypes from 'prop-types';
+import { Switch } from 'react-router-dom';
+import CircularProgress from '@mui/material/CircularProgress';
+import Box from '@mui/material/Box';
+import HomeView from './views/HomeView';
+import MainAppBar from './components/AppBar';
+import RegisterView from './views/RegisterView';
+import LoginView from './views/LoginView';
+import { authOperations } from './redux/auth';
+import ContactsView from './views/ContactsView';
+import PrivateRoute from './components/PrivateRoute';
+import PublicRoute from './components/PublicRoute';
+import { authSelectors } from './redux/auth';
 
-function App() {
+export default function App() {
+  const dispatch = useDispatch();
+  const isFetchingCurrentUser = useSelector(authSelectors.getIsFetchingCurrent);
+
+  useEffect(() => {
+    dispatch(authOperations.fetchCurrentUser());
+  }, [dispatch]);
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
+    <Box className={s.wrapperBox}>
+      {isFetchingCurrentUser ? (
+        <Box className={s.wrapperProgress}>
+          <CircularProgress />
+        </Box>
+      ) : (
+        <>
+          <MainAppBar />
+          <Switch>
+            <PublicRoute exact path="/">
+              <HomeView />
+            </PublicRoute>
+            <PublicRoute path="/register" restricted>
+              <RegisterView />
+            </PublicRoute>
+            <PublicRoute path="/login" restricted>
+              <LoginView />
+            </PublicRoute>
+            <PrivateRoute path="/contacts">
+              <ContactsView />
+            </PrivateRoute>
+          </Switch>
+        </>
+      )}
+    </Box>
   );
 }
 
-export default App;
+App.propTypes = {
+  contacts: PropTypes.arrayOf(
+    PropTypes.shape({
+      id: PropTypes.string,
+      name: PropTypes.string,
+      number: PropTypes.string,
+    }),
+  ),
+};
